@@ -11,13 +11,13 @@ import gzip
 from random import random
 from preprocess import MyVocabularyProcessor
 import sys
-reload(sys)
-sys.setdefaultencoding("utf-8")
+# reload(sys)
+# sys.setdefaultencoding("utf-8")
 
 class InputHelper(object):
-    pre_emb = dict()
+    pre_emb = dict()  # todo: strange, just temporary variable?
     vocab_processor = None
-    def cleanText(self, s):
+    def cleanText(self, s):  # todo: modify this to fit Chinese
         s = re.sub(r"[^\x00-\x7F]+"," ", s)
         s = re.sub(r'[\~\!\`\^\*\{\}\[\]\#\<\>\?\+\=\-\_\(\)]+',"",s)
         s = re.sub(r'( [0-9,\.]+)',r"\1 ", s)
@@ -25,14 +25,14 @@ class InputHelper(object):
         s = re.sub('[ ]+',' ', s)
         return s.lower()
 
-    def getVocab(self,vocab_path, max_document_length,filter_h_pad):
+    def getVocab(self,vocab_path, max_document_length,filter_h_pad):  # todo: filter_h_pad is what?
         if self.vocab_processor==None:
             print('locading vocab')
             vocab_processor = MyVocabularyProcessor(max_document_length-filter_h_pad,min_frequency=0)
             self.vocab_processor = vocab_processor.restore(vocab_path)
         return self.vocab_processor
 
-    def loadW2V(self,emb_path, type="bin"):
+    def loadW2V(self,emb_path, type="bin"):  # todo: where is self.pre_emb used?
         print("Loading W2V data...")
         num_keys = 0
         if type=="textgz":
@@ -44,7 +44,7 @@ class InputHelper(object):
             num_keys=len(self.pre_emb)
         if type=="text":
             # this seems faster than gensim non-binary load
-            for line in open(emb_path):
+            for line in open(emb_path):  # todo: this is written in py2
                 l = line.strip().split()
                 st=l[0].lower()
                 self.pre_emb[st]=np.asarray(l[1:])
@@ -60,7 +60,7 @@ class InputHelper(object):
         self.pre_emb=dict()
         gc.collect()
 
-    def getTsvData(self, filepath):
+    def getTsvData(self, filepath):  # what does Tsv mean? tab-seperated-version
         print("Loading training data from "+filepath)
         x1=[]
         x2=[]
@@ -68,7 +68,7 @@ class InputHelper(object):
         # positive samples from file
         for line in open(filepath):
             l=line.strip().split("\t")
-            if len(l)<2:
+            if len(l)<2:  # todo: len(l) < 3 ???
                 continue
             if random() > 0.5:
                 x1.append(l[0].lower())
@@ -100,7 +100,7 @@ class InputHelper(object):
         combined = np.asarray(x1+x2)
         shuffle_indices = np.random.permutation(np.arange(len(combined)))
         combined_shuff = combined[shuffle_indices]
-        for i in xrange(len(combined)):
+        for i in range(len(combined)):
             x1.append(combined[i])
             x2.append(combined_shuff[i])
             y.append(0) #np.array([1,0]))
@@ -143,7 +143,7 @@ class InputHelper(object):
                 end_index = min((batch_num + 1) * batch_size, data_size)
                 yield shuffled_data[start_index:end_index]
                 
-    def dumpValidation(self,x1_text,x2_text,y,shuffled_index,dev_idx,i):
+    def dumpValidation(self,x1_text,x2_text,y,shuffled_index,dev_idx,i):  # todo: for what use?
         print("dumping validation "+str(i))
         x1_shuffled=x1_text[shuffled_index]
         x2_shuffled=x2_text[shuffled_index]
@@ -171,8 +171,10 @@ class InputHelper(object):
             x1_text, x2_text, y=self.getTsvData(training_paths)
         # Build vocabulary
         print("Building vocabulary")
-        vocab_processor = MyVocabularyProcessor(max_document_length,min_frequency=0,is_char_based=is_char_based)
-        vocab_processor.fit_transform(np.concatenate((x2_text,x1_text),axis=0))
+        vocab_processor = learn.preprocessing.VocabularyProcessor(max_document_length)
+        vocab_processor.fit_transform(np.concatenate((x2_text, x1_text), axis=0))
+        # vocab_processor = MyVocabularyProcessor(max_document_length,min_frequency=0,is_char_based=is_char_based)
+        # vocab_processor.fit_transform(np.concatenate((x2_text,x1_text),axis=0))
         print("Length of loaded vocabulary ={}".format( len(vocab_processor.vocabulary_)))
         i1=0
         train_set=[]
@@ -208,12 +210,12 @@ class InputHelper(object):
         # Build vocabulary
         vocab_processor = MyVocabularyProcessor(max_document_length,min_frequency=0)
         vocab_processor = vocab_processor.restore(vocab_path)
-        print len(vocab_processor.vocabulary_)
+        print(len(vocab_processor.vocabulary_))
 
         x1 = np.asarray(list(vocab_processor.transform(x1_temp)))
         x2 = np.asarray(list(vocab_processor.transform(x2_temp)))
         # Randomly shuffle data
         del vocab_processor
         gc.collect()
-        return x1,x2, y
+        return x1, x2, y
 
