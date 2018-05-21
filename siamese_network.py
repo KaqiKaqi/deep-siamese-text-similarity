@@ -9,7 +9,7 @@ class SiameseLSTM(object):
     
     def BiRNN(self, x, dropout, scope, embedding_size, sequence_length, hidden_units):
         n_hidden=hidden_units
-        n_layers=3
+        n_layers=3  # how many layers to stack?
         # Prepare data shape to match `static_rnn` function requirements
         x = tf.unstack(tf.transpose(x, perm=[1, 0, 2]))
         print(x)

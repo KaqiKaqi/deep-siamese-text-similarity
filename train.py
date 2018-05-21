@@ -39,7 +39,8 @@ tf.flags.DEFINE_boolean("allow_soft_placement", True, "Allow device soft device 
 tf.flags.DEFINE_boolean("log_device_placement", False, "Log placement of ops on devices")
 
 FLAGS = tf.flags.FLAGS
-FLAGS._parse_flags()
+# FLAGS._parse_flags()
+FLAGS.flag_values_dict()
 print("\nParameters:")
 for attr, value in sorted(FLAGS.__flags.items()):
     print("{}={}".format(attr.upper(), value))
@@ -66,7 +67,7 @@ else:
           "Otherwise now the code is automatically trying to learn embedding values (may not help in accuracy)"
           "\n!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!\n")
     else:
-        inpH.loadW2V(FLAGS.word2vec_model, FLAGS.word2vec_format)
+        inpH.loadW2V(FLAGS.word2vec_model, FLAGS.word2vec_format)  # todo: word2vec model's usage
 
 # Training
 # ==================================================
@@ -77,7 +78,7 @@ with tf.Graph().as_default():
       log_device_placement=FLAGS.log_device_placement)
     sess = tf.Session(config=session_conf)
     print("started session")
-    with sess.as_default():
+    with sess.as_default():  # todo: strange indentation, i don't understand this "with sess.as_default()"
         if FLAGS.is_char_based:
             siameseModel = SiameseLSTM(
                 sequence_length=max_document_length,
@@ -103,7 +104,7 @@ with tf.Graph().as_default():
         print("initialized siameseModel object")
     
     grads_and_vars=optimizer.compute_gradients(siameseModel.loss)
-    tr_op_set = optimizer.apply_gradients(grads_and_vars, global_step=global_step)
+    tr_op_set = optimizer.apply_gradients(grads_and_vars, global_step=global_step)  # THIS THIS THIS
     print("defined training_ops")
     # Keep track of gradient values and sparsity (optional)
     grad_summaries = []
@@ -145,15 +146,15 @@ with tf.Graph().as_default():
     vocab_processor.save(os.path.join(checkpoint_dir, "vocab"))
 
     # Initialize all variables
-    sess.run(tf.global_variables_initializer())
+    sess.run(tf.global_variables_initializer())  # start running
     
     print("init all variables")
     graph_def = tf.get_default_graph().as_graph_def()
     graphpb_txt = str(graph_def)
-    with open(os.path.join(checkpoint_dir, "graphpb.txt"), 'w') as f:
+    with open(os.path.join(checkpoint_dir, "graphpb.txt"), 'w') as f:  # todo: ??? what does this mean?
         f.write(graphpb_txt)
 
-    if FLAGS.word2vec_model :
+    if FLAGS.word2vec_model :  # if use pre-trained word2vec model
         # initial matrix with random uniform
         initW = np.random.uniform(-0.25,0.25,(len(vocab_processor.vocabulary_), FLAGS.embedding_dim))
         #initW = np.zeros(shape=(len(vocab_processor.vocabulary_), FLAGS.embedding_dim))
@@ -175,14 +176,14 @@ with tf.Graph().as_default():
                 initW[idx]=np.asarray(arr).astype(np.float32)
         print("Done assigning intiW. len="+str(len(initW)))
         inpH.deletePreEmb()
-        gc.collect()
+        gc.collect()  # todo: ??? what does this mean?
         sess.run(siameseModel.W.assign(initW))
 
     def train_step(x1_batch, x2_batch, y_batch):
         """
         A single training step
         """
-        if random()>0.5:
+        if random()>0.5:  # cmmt: interesting
             feed_dict = {
                 siameseModel.input_x1: x1_batch,
                 siameseModel.input_x2: x2_batch,
@@ -233,15 +234,16 @@ with tf.Graph().as_default():
 
     ptr=0
     max_validation_acc=0.0
-    for nn in xrange(sum_no_of_batches*FLAGS.num_epochs):
-        batch = batches.next()
+    for nn in range(sum_no_of_batches*FLAGS.num_epochs):
+        # batch = batches.next()
+        batch = next(batches)
         if len(batch)<1:
             continue
         x1_batch,x2_batch, y_batch = zip(*batch)
         if len(y_batch)<1:
             continue
-        train_step(x1_batch, x2_batch, y_batch)
-        current_step = tf.train.global_step(sess, global_step)
+        train_step(x1_batch, x2_batch, y_batch)  # HERE: run
+        current_step = tf.train.global_step(sess, global_step)  # todo: ???
         sum_acc=0.0
         if current_step % FLAGS.evaluate_every == 0:
             print("\nEvaluation:")

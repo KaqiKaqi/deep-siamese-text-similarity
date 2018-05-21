@@ -29,7 +29,7 @@ class MyVocabularyProcessor(learn.preprocessing.VocabularyProcessor):
         if is_char_based:
             tokenizer_fn=tokenizer_char
         else:
-            tokenizer_fn=tokenizer_word
+            tokenizer_fn=tokenizer_word  # use jieba or something like this to tokenize
         self.sup = super(MyVocabularyProcessor,self)
         self.sup.__init__(max_document_length,min_frequency,vocabulary,tokenizer_fn)
 
