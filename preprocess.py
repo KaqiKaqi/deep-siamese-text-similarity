@@ -9,6 +9,9 @@ from tensorflow.contrib import learn
 from tensorflow.python.platform import gfile
 from tensorflow.contrib import learn  # pylint: disable=g-bad-import-order
 
+
+import pickle
+
 TOKENIZER_RE = re.compile(r"[A-Z]{2,}(?![a-z])|[A-Z][a-z]+(?=[A-Z])|[\'\w\-]+",
                           re.UNICODE)
 
@@ -50,3 +53,12 @@ class MyVocabularyProcessor(learn.preprocessing.VocabularyProcessor):
                     break
                 word_ids[idx] = self.vocabulary_.get(token)
             yield word_ids
+
+    def save(self, filename):
+        """Saves vocabulary processor into given file.
+
+        Args:
+          filename: Path to output file.
+        """
+        with gfile.Open(filename, 'wb') as f:
+            f.write(pickle.dumps(self))

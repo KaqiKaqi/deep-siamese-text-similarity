@@ -14,6 +14,17 @@ import sys
 # reload(sys)
 # sys.setdefaultencoding("utf-8")
 
+TOKENIZER_RE = re.compile(r"[A-Z]{2,}(?![a-z])|[A-Z][a-z]+(?=[A-Z])|[\'\w\-]+",
+                          re.UNICODE)
+
+def tokenizer_char(iterator):
+    for value in iterator:
+        yield list(value)
+
+def tokenizer_word(iterator):
+    for value in iterator:
+        yield TOKENIZER_RE.findall(value)
+
 class InputHelper(object):
     pre_emb = dict()  # todo: strange, just temporary variable?
     vocab_processor = None
@@ -167,11 +178,13 @@ class InputHelper(object):
     def getDataSets(self, training_paths, max_document_length, percent_dev, batch_size, is_char_based):
         if is_char_based:
             x1_text, x2_text, y=self.getTsvDataCharBased(training_paths)
+            tokenizer_fn = tokenizer_char
         else:
             x1_text, x2_text, y=self.getTsvData(training_paths)
+            tokenizer_fn = tokenizer_word
         # Build vocabulary
         print("Building vocabulary")
-        vocab_processor = learn.preprocessing.VocabularyProcessor(max_document_length)
+        vocab_processor = learn.preprocessing.VocabularyProcessor(max_document_length, tokenizer_fn=tokenizer_fn)
         vocab_processor.fit_transform(np.concatenate((x2_text, x1_text), axis=0))
         # vocab_processor = MyVocabularyProcessor(max_document_length,min_frequency=0,is_char_based=is_char_based)
         # vocab_processor.fit_transform(np.concatenate((x2_text,x1_text),axis=0))
